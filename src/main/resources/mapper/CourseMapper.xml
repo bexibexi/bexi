@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stu.gym.gymmembermanage.mapper.CourseMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.stu.gym.gymmembermanage.entity.Course">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="coach" property="coach"/>
+        <result column="max_capacity" property="maxCapacity"/>
+        <result column="current_count" property="currentCount"/>
+        <result column="duration" property="duration"/>
+        <result column="location" property="location"/>
+        <result column="schedule_time" property="scheduleTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 查询所有课程（从预约表实时统计已预约人数） -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 分页查询课程 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        ORDER BY c.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 查询所有上架课程 -->
+    <select id="selectAllActive" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        WHERE c.status = 1
+        ORDER BY c.schedule_time ASC
+    </select>
+
+    <!-- 分页查询上架课程 -->
+    <select id="selectActiveByPage" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        WHERE c.status = 1
+        ORDER BY c.schedule_time ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 根据ID查询课程 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        WHERE c.id = #{id}
+    </select>
+
+    <!-- 根据条件查询课程列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        <where>
+            <if test="name != null and name != ''">
+                AND c.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="coach != null and coach != ''">
+                AND c.coach LIKE CONCAT('%', #{coach}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 根据条件分页查询课程列表 -->
+    <select id="selectByConditionPage" resultMap="BaseResultMap">
+        SELECT c.id, c.name, c.description, c.coach, c.max_capacity,
+               IFNULL(r.reservation_count, 0) AS current_count,
+               c.duration, c.location, c.schedule_time, c.status, c.create_time
+        FROM course c
+        LEFT JOIN (
+            SELECT course_id, COUNT(*) AS reservation_count
+            FROM reservation
+            WHERE status = 1
+            GROUP BY course_id
+        ) r ON c.id = r.course_id
+        <where>
+            <if test="name != null and name != ''">
+                AND c.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="coach != null and coach != ''">
+                AND c.coach LIKE CONCAT('%', #{coach}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计条件查询的课程数 -->
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(*)
+        FROM course c
+        <where>
+            <if test="name != null and name != ''">
+                AND c.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="coach != null and coach != ''">
+                AND c.coach LIKE CONCAT('%', #{coach}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 统计指定课程的有效预约数 -->
+    <select id="countValidReservations" resultType="int" parameterType="int">
+        SELECT COUNT(*) FROM reservation WHERE course_id = #{courseId} AND status = 1
+    </select>
+
+    <!-- 插入课程 -->
+    <insert id="insert" parameterType="com.stu.gym.gymmembermanage.entity.Course" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO course (name, description, coach, max_capacity, current_count, duration, location, schedule_time, status)
+        VALUES (#{name}, #{description}, #{coach}, #{maxCapacity}, 0, #{duration}, #{location}, #{scheduleTime}, #{status})
+    </insert>
+
+    <!-- 更新课程信息 -->
+    <update id="update" parameterType="com.stu.gym.gymmembermanage.entity.Course">
+        UPDATE course
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="coach != null">coach = #{coach},</if>
+            <if test="maxCapacity != null">max_capacity = #{maxCapacity},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="scheduleTime != null">schedule_time = #{scheduleTime},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新课程状态 -->
+    <update id="updateStatus">
+        UPDATE course SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <!-- 删除课程 -->
+    <delete id="deleteById">
+        DELETE FROM course WHERE id = #{id}
+    </delete>
+
+    <!-- 统计课程总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM course
+    </select>
+
+    <!-- 统计上架课程数 -->
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM course WHERE status = #{status}
+    </select>
+
+</mapper>

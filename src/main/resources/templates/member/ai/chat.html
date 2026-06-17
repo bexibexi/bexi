@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能客服 - 健身房管理系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container { height: calc(100vh - 200px); min-height: 400px; }
+        .chat-messages { height: calc(100% - 80px); overflow-y: auto; padding: 20px; background-color: #f8f9fa; border-radius: 10px 10px 0 0; }
+        .message { margin-bottom: 15px; display: flex; }
+        .message.user { justify-content: flex-end; }
+        .message .bubble { max-width: 70%; padding: 10px 15px; border-radius: 15px; word-wrap: break-word; }
+        .message.user .bubble { background-color: #007bff; color: white; border-bottom-right-radius: 5px; }
+        .message.assistant .bubble { background-color: white; color: #333; border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .message .avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 10px; flex-shrink: 0; }
+        .message.user .avatar { background-color: #007bff; color: white; }
+        .message.assistant .avatar { background-color: #28a745; color: white; }
+        .chat-input { background: white; padding: 15px; border-radius: 0 0 10px 10px; border-top: 1px solid #dee2e6; }
+        .typing-indicator { display: none; padding: 10px 15px; background-color: white; border-radius: 15px; border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .typing-indicator span { display: inline-block; width: 8px; height: 8px; background-color: #999; border-radius: 50%; margin: 0 2px; animation: typing 1s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .quick-questions { margin-bottom: 15px; }
+        .quick-questions .btn { margin: 3px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div th:replace="common/header :: header"></div>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card chat-container">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-robot"></i> 智能客服助手</h5>
+                        <button class="btn btn-sm btn-light" id="clearBtn">
+                            <i class="fas fa-trash"></i> 清空记录
+                        </button>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message assistant">
+                            <div class="avatar"><i class="fas fa-robot"></i></div>
+                            <div class="bubble">
+                                您好！我是健身房智能客服助手'小健'。<br>
+                                我可以帮您了解课程信息、预约规则、会员权益等。<br>
+                                请问有什么可以帮您？
+                            </div>
+                        </div>
+                        <div class="quick-questions" id="quickQuestions">
+                            <p class="text-muted mb-2"><small>快捷问题：</small></p>
+                            <button class="btn btn-outline-primary btn-sm quick-btn" data-q="这周有什么课程？">这周有什么课程？</button>
+                            <button class="btn btn-outline-primary btn-sm quick-btn" data-q="如何取消预约？">如何取消预约？</button>
+                            <button class="btn btn-outline-primary btn-sm quick-btn" data-q="VIP会员有什么权益？">VIP会员有什么权益？</button>
+                            <button class="btn btn-outline-primary btn-sm quick-btn" data-q="推荐适合减脂的课程">推荐减脂课程</button>
+                        </div>
+                        <div class="typing-indicator" id="typingIndicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="messageInput" placeholder="输入您的问题...">
+                            <button class="btn btn-success" id="sendBtn">
+                                <i class="fas fa-paper-plane"></i> 发送
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="common/footer :: footer"></div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript">
+    (function() {
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+
+            var chatMessages = document.getElementById('chatMessages');
+            var messageInput = document.getElementById('messageInput');
+            var sendBtn = document.getElementById('sendBtn');
+            var clearBtn = document.getElementById('clearBtn');
+            var typingIndicator = document.getElementById('typingIndicator');
+            var quickQuestions = document.getElementById('quickQuestions');
+
+            // 加载聊天历史
+            function loadChatHistory() {
+                fetch('/api/ai/chat/history?limit=20')
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.code === 200 && data.data) {
+                            data.data.forEach(function(msg) {
+                                addMessage(msg.role, msg.content);
+                            });
+                        }
+                    })
+                    .catch(function(error) { console.error('加载历史记录失败:', error); });
+            }
+
+            // 发送快捷问题
+            function sendQuickQuestion(question) {
+                messageInput.value = question;
+                sendMessage();
+            }
+
+            // 发送消息
+            function sendMessage() {
+                var message = messageInput.value.trim();
+                if (!message) return;
+
+                if (quickQuestions) {
+                    quickQuestions.style.display = 'none';
+                }
+
+                addMessage('user', message);
+                messageInput.value = '';
+                showTypingIndicator();
+
+                fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'message=' + encodeURIComponent(message)
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    hideTypingIndicator();
+                    if (data.code === 200) {
+                        addMessage('assistant', data.reply);
+                    } else {
+                        addMessage('assistant', data.message || '抱歉，暂时无法回答您的问题。');
+                    }
+                })
+                .catch(function(error) {
+                    hideTypingIndicator();
+                    addMessage('assistant', '网络错误，请稍后再试。');
+                    console.error('发送消息失败:', error);
+                });
+            }
+
+            // 添加消息
+            function addMessage(role, content) {
+                var messageDiv = document.createElement('div');
+                messageDiv.className = 'message ' + role;
+                var avatarIcon = role === 'user' ? 'fa-user' : 'fa-robot';
+                var safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                messageDiv.innerHTML = '<div class="avatar"><i class="fas ' + avatarIcon + '"></i></div><div class="bubble">' + safeContent + '</div>';
+                chatMessages.insertBefore(messageDiv, typingIndicator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function showTypingIndicator() {
+                typingIndicator.style.display = 'block';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function hideTypingIndicator() {
+                typingIndicator.style.display = 'none';
+            }
+
+            function clearChat() {
+                if (!confirm('确定要清空所有聊天记录吗？')) return;
+                fetch('/api/ai/chat/clear', { method: 'POST' })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.code === 200) {
+                            var messages = chatMessages.querySelectorAll('.message:not(:first-child)');
+                            messages.forEach(function(msg) { msg.remove(); });
+                            quickQuestions.style.display = 'block';
+                            alert('聊天记录已清空');
+                        }
+                    });
+            }
+
+            // 绑定事件
+            sendBtn.addEventListener('click', sendMessage);
+            clearBtn.addEventListener('click', clearChat);
+
+            messageInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 绑定快捷问题按钮
+            var quickBtns = document.querySelectorAll('.quick-btn');
+            quickBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var question = this.getAttribute('data-q');
+                    sendQuickQuestion(question);
+                });
+            });
+
+            // 加载历史记录
+            loadChatHistory();
+        });
+    })();
+    </script>
+</body>
+</html>

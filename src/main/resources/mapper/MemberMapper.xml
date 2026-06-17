@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stu.gym.gymmembermanage.mapper.MemberMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.stu.gym.gymmembermanage.entity.Member">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="real_name" property="realName"/>
+        <result column="gender" property="gender"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="member_type" property="memberType"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 查询所有会员 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询会员 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 根据ID查询会员 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户名查询会员 -->
+    <select id="selectByUsername" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        WHERE username = #{username}
+    </select>
+
+    <!-- 根据条件查询会员列表 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        <where>
+            <if test="realName != null and realName != ''">
+                AND real_name LIKE CONCAT('%', #{realName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据条件分页查询会员列表 -->
+    <select id="selectByConditionPage" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        <where>
+            <if test="realName != null and realName != ''">
+                AND real_name LIKE CONCAT('%', #{realName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计条件查询的会员数 -->
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(*)
+        FROM member
+        <where>
+            <if test="realName != null and realName != ''">
+                AND real_name LIKE CONCAT('%', #{realName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 验证会员登录 -->
+    <select id="selectByUsernameAndPassword" resultMap="BaseResultMap">
+        SELECT id, username, password, real_name, gender, phone, email, member_type, status, create_time
+        FROM member
+        WHERE username = #{username} AND password = #{password} AND status = 1
+    </select>
+
+    <!-- 插入会员 -->
+    <insert id="insert" parameterType="com.stu.gym.gymmembermanage.entity.Member" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (username, password, real_name, gender, phone, email, member_type, status)
+        VALUES (#{username}, #{password}, #{realName}, #{gender}, #{phone}, #{email}, #{memberType}, #{status})
+    </insert>
+
+    <!-- 更新会员信息 -->
+    <update id="update" parameterType="com.stu.gym.gymmembermanage.entity.Member">
+        UPDATE member
+        <set>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="memberType != null">member_type = #{memberType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新会员状态 -->
+    <update id="updateStatus">
+        UPDATE member SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <!-- 删除会员 -->
+    <delete id="deleteById">
+        DELETE FROM member WHERE id = #{id}
+    </delete>
+
+    <!-- 统计会员总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM member
+    </select>
+
+    <!-- 统计正常状态会员数 -->
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM member WHERE status = #{status}
+    </select>
+
+</mapper>

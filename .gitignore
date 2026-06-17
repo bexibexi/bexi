@@ -1,0 +1,19 @@
+# IDEA 全部配置文件夹
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Maven编译产物
+target/
+
+# 日志文件
+*.log
+
+# 系统缓存文件
+.DS_Store
+Thumbs.db
+
+# 临时备份文件
+*.tmp
+*.bak

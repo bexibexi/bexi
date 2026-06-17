@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stu.gym.gymmembermanage.mapper.ReservationMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.stu.gym.gymmembermanage.entity.Reservation">
+        <id column="id" property="id"/>
+        <result column="member_id" property="memberId"/>
+        <result column="course_id" property="courseId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="cancel_time" property="cancelTime"/>
+    </resultMap>
+
+    <!-- 关联查询结果映射 -->
+    <resultMap id="DetailResultMap" type="com.stu.gym.gymmembermanage.entity.Reservation">
+        <id column="id" property="id"/>
+        <result column="member_id" property="memberId"/>
+        <result column="course_id" property="courseId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="member_name" property="memberName"/>
+        <result column="member_username" property="memberUsername"/>
+        <result column="course_name" property="courseName"/>
+        <result column="course_coach" property="courseCoach"/>
+        <result column="course_schedule_time" property="courseScheduleTime"/>
+        <result column="course_location" property="courseLocation"/>
+    </resultMap>
+
+    <!-- 查询所有预约记录(关联查询会员和课程信息) -->
+    <select id="selectAllWithDetail" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 分页查询预约记录 -->
+    <select id="selectByPage" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        ORDER BY r.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 根据ID查询预约记录 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, member_id, course_id, status, create_time, cancel_time
+        FROM reservation
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据ID查询预约记录(关联查询) -->
+    <select id="selectByIdWithDetail" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        WHERE r.id = #{id}
+    </select>
+
+    <!-- 根据会员ID查询预约记录 -->
+    <select id="selectByMemberId" resultMap="BaseResultMap">
+        SELECT id, member_id, course_id, status, create_time, cancel_time
+        FROM reservation
+        WHERE member_id = #{memberId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据会员ID分页查询预约记录 -->
+    <select id="selectByMemberIdPage" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        WHERE r.member_id = #{memberId}
+        ORDER BY r.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 根据会员ID查询预约记录(关联查询) -->
+    <select id="selectByMemberIdWithDetail" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        WHERE r.member_id = #{memberId}
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 根据课程ID查询预约记录 -->
+    <select id="selectByCourseId" resultMap="BaseResultMap">
+        SELECT id, member_id, course_id, status, create_time, cancel_time
+        FROM reservation
+        WHERE course_id = #{courseId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询会员是否已预约某课程(状态为已预约) -->
+    <select id="selectByMemberAndCourse" resultMap="BaseResultMap">
+        SELECT id, member_id, course_id, status, create_time, cancel_time
+        FROM reservation
+        WHERE member_id = #{memberId} AND course_id = #{courseId} AND status = 1
+    </select>
+
+    <!-- 根据条件查询预约记录 -->
+    <select id="selectByCondition" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        <where>
+            <if test="memberId != null">
+                AND r.member_id = #{memberId}
+            </if>
+            <if test="courseId != null">
+                AND r.course_id = #{courseId}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+        </where>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 根据条件分页查询预约记录 -->
+    <select id="selectByConditionPage" resultMap="DetailResultMap">
+        SELECT r.id, r.member_id, r.course_id, r.status, r.create_time, r.cancel_time,
+               m.real_name AS member_name, m.username AS member_username,
+               c.name AS course_name, c.coach AS course_coach,
+               c.schedule_time AS course_schedule_time, c.location AS course_location
+        FROM reservation r
+        LEFT JOIN member m ON r.member_id = m.id
+        LEFT JOIN course c ON r.course_id = c.id
+        <where>
+            <if test="memberId != null">
+                AND r.member_id = #{memberId}
+            </if>
+            <if test="courseId != null">
+                AND r.course_id = #{courseId}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+        </where>
+        ORDER BY r.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计条件查询的预约记录数 -->
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(*)
+        FROM reservation r
+        <where>
+            <if test="memberId != null">
+                AND r.member_id = #{memberId}
+            </if>
+            <if test="courseId != null">
+                AND r.course_id = #{courseId}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 统计会员预约数 -->
+    <select id="countByMemberId" resultType="int">
+        SELECT COUNT(*) FROM reservation WHERE member_id = #{memberId} AND status = 1
+    </select>
+
+    <!-- 插入预约记录 -->
+    <insert id="insert" parameterType="com.stu.gym.gymmembermanage.entity.Reservation" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reservation (member_id, course_id, status)
+        VALUES (#{memberId}, #{courseId}, #{status})
+    </insert>
+
+    <!-- 更新预约状态 -->
+    <update id="updateStatus">
+        UPDATE reservation SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <!-- 取消预约 -->
+    <update id="cancelReservation">
+        UPDATE reservation SET status = 0, cancel_time = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- 删除预约记录 -->
+    <delete id="deleteById">
+        DELETE FROM reservation WHERE id = #{id}
+    </delete>
+
+    <!-- 统计预约总数 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM reservation
+    </select>
+
+    <!-- 统计有效预约数(状态为已预约) -->
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM reservation WHERE status = #{status}
+    </select>
+
+</mapper>

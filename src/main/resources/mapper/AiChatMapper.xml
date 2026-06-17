@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stu.gym.gymmembermanage.mapper.AiChatMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.stu.gym.gymmembermanage.entity.AiChatMessage">
+        <id column="id" property="id"/>
+        <result column="member_id" property="memberId"/>
+        <result column="role" property="role"/>
+        <result column="content" property="content"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 插入聊天记录 -->
+    <insert id="insert" parameterType="AiChatMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ai_chat_message (member_id, role, content)
+        VALUES (#{memberId}, #{role}, #{content})
+    </insert>
+
+    <!-- 根据会员ID查询最近的聊天记录 -->
+    <select id="selectRecentByMemberId" resultMap="BaseResultMap">
+        SELECT id, member_id, role, content, create_time
+        FROM ai_chat_message
+        WHERE member_id = #{memberId}
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据会员ID删除所有聊天记录 -->
+    <delete id="deleteByMemberId">
+        DELETE FROM ai_chat_message WHERE member_id = #{memberId}
+    </delete>
+
+    <!-- 统计会员聊天记录数 -->
+    <select id="countByMemberId" resultType="int">
+        SELECT COUNT(*) FROM ai_chat_message WHERE member_id = #{memberId}
+    </select>
+
+</mapper>

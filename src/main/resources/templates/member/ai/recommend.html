@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能推荐 - 健身房管理系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .recommend-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .course-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .recommend-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .recommend-reason {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        .ai-summary {
+            background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="common/header :: header"></div>
+
+    <div class="container mt-4">
+        <!-- 推荐头部 -->
+        <div class="recommend-header text-center">
+            <h2><i class="fas fa-magic"></i> AI智能推荐</h2>
+            <p class="mb-0">基于您的健身习惯和偏好，为您量身推荐最适合的课程</p>
+        </div>
+
+        <!-- 加载指示器 -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <p class="mt-3 text-muted">AI正在为您分析最佳课程...</p>
+        </div>
+
+        <!-- AI总结 -->
+        <div class="ai-summary" id="aiSummary" style="display: none;">
+            <h5><i class="fas fa-lightbulb"></i> AI分析</h5>
+            <p id="summaryText" class="mb-0"></p>
+        </div>
+
+        <!-- 推荐课程列表 -->
+        <div class="row" id="recommendList"></div>
+
+        <!-- 无推荐时的提示 -->
+        <div class="text-center py-5" id="noRecommend" style="display: none;">
+            <i class="fas fa-robot fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">暂无推荐</h4>
+            <p class="text-muted">多预约一些课程，AI就能更好地为您推荐啦！</p>
+            <a href="/member/course/list" class="btn btn-primary">
+                <i class="fas fa-search"></i> 浏览课程
+            </a>
+        </div>
+
+        <!-- 刷新推荐按钮 -->
+        <div class="text-center mt-4 mb-4">
+            <button class="btn btn-outline-primary btn-lg" onclick="loadRecommend()">
+                <i class="fas fa-sync-alt"></i> 换一批推荐
+            </button>
+        </div>
+    </div>
+
+    <div th:replace="common/footer :: footer"></div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 页面加载时获取推荐
+        window.onload = function() {
+            loadRecommend();
+        };
+
+        // 加载推荐
+        function loadRecommend() {
+            // 显示加载指示器
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('recommendList').innerHTML = '';
+            document.getElementById('aiSummary').style.display = 'none';
+            document.getElementById('noRecommend').style.display = 'none';
+
+            fetch('/api/ai/recommend')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+
+                    if (data.code === 200 && data.data && data.data.length > 0) {
+                        // 显示AI总结
+                        if (data.reason) {
+                            document.getElementById('summaryText').textContent = data.reason;
+                            document.getElementById('aiSummary').style.display = 'block';
+                        }
+
+                        // 显示推荐课程
+                        displayRecommendations(data.data);
+                    } else {
+                        document.getElementById('noRecommend').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('noRecommend').style.display = 'block';
+                    console.error('获取推荐失败:', error);
+                });
+        }
+
+        // 显示推荐课程
+        function displayRecommendations(courses) {
+            const container = document.getElementById('recommendList');
+            container.innerHTML = '';
+
+            courses.forEach((course, index) => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-4';
+
+                const scoreClass = course.recommendScore >= 90 ? 'bg-success' :
+                                   course.recommendScore >= 80 ? 'bg-primary' : 'bg-info';
+
+                card.innerHTML = `
+                    <div class="card course-card position-relative">
+                        <span class="recommend-badge">
+                            <i class="fas fa-star"></i> 推荐${course.recommendScore}%
+                        </span>
+                        <div class="card-header ${scoreClass} text-white">
+                            <h5 class="mb-0">${course.courseName}</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-user-tie text-primary"></i>
+                                    教练：<strong>${course.coach || '待定'}</strong>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-success"></i>
+                                    时间：${course.scheduleTime || '待定'}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-users text-warning"></i>
+                                    剩余名额：<strong>${course.remainingSlots}</strong>
+                                </li>
+                            </ul>
+                            <div class="recommend-reason">
+                                <i class="fas fa-lightbulb text-warning"></i>
+                                ${course.recommendReason}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="/member/reservation/make/${course.courseId}"
+                               class="btn btn-primary w-100"
+                               onclick="return confirm('确定要预约此课程吗？')">
+                                <i class="fas fa-check"></i> 立即预约
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

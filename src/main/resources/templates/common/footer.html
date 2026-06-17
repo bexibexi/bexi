@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- 公共底部片段 -->
+<div th:fragment="footer">
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-dumbbell"></i> 健身房管理系统</h5>
+                    <p class="mb-0">专业的健身房会员与课程预约管理平台</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>快速链接</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-light">首页</a></li>
+                        <li><a href="/login" class="text-light">登录</a></li>
+                        <li><a href="/register" class="text-light">注册</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>联系我们</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone"></i> 400-123-4567</li>
+                        <li><i class="fas fa-envelope"></i> gym@example.com</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 健身房管理系统. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</div>
+</html>
